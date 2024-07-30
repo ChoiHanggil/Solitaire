@@ -1,8 +1,8 @@
 #include "Card.h"
 using namespace solitaire;
 
-Card::Card(HWND hwnd,Type type, int x, int y) :
-	mHwnd(hwnd), mX(x), mY(y), mType(type), mIsFront(false)
+Card::Card(HWND hwnd,int index, Type type, int x, int y) :
+	mHwnd(hwnd), mIndex(index), mX(x), mY(y), mType(type), mIsFront(false)
 {
 	mBackImage = std::make_unique<Gdiplus::Image>(L"images/card_back.png");
 

@@ -1,5 +1,6 @@
 #include "Game.h"
-
+#include <random>
+#include <vector>
 using namespace solitaire;
 
 void solitaire::Game::Init(HWND hwnd)
@@ -7,6 +8,7 @@ void solitaire::Game::Init(HWND hwnd)
 	mHwnd = hwnd;
 	mBackgroundImage = std::make_unique<Gdiplus::Image>(L"images/bg_blank.png");
 	CreateCradDack();
+	mpSelectedCard = nullptr;
 }
 
 void solitaire::Game::Release()
@@ -44,13 +46,51 @@ void solitaire::Game::Draw(Gdiplus::Graphics& graphics)
 
 void solitaire::Game::OnClick(int x, int y)
 {
+	Card* pCard{};
+
 	for (auto& card : mDeck)
 	{
 		if (card.CheckClicked(x, y))
 		{
-
+			pCard = &card;
+			break;
 		}
 	}
+	if (pCard)
+	{
+		mFlipCount++;
+		RECT rct = { (LONG)BOARD_COUNT.GetLeft(), (LONG)BOARD_COUNT.GetTop(),
+					 (LONG)BOARD_COUNT.GetRight(), (LONG)BOARD_COUNT.GetBottom() };
+
+		InvalidateRect(mHwnd, &rct, false);
+
+		if (mpSelectedCard == nullptr)
+		{
+			mpSelectedCard = pCard;
+		}
+		else
+		{
+			if (pCard->GetType() == mpSelectedCard->GetType() && pCard->GetIndex() != mpSelectedCard->GetIndex())
+			{
+				mpSelectedCard->Invalidate();
+
+				mDeck.remove_if([&](Card& card) {return card.GetIndex() == pCard->GetIndex(); });
+				mDeck.remove_if([&](Card& card) {return card.GetIndex() == mpSelectedCard->GetIndex(); });
+
+				mpSelectedCard = nullptr;
+			}
+			else
+			{
+				UpdateWindow(mHwnd);
+				Sleep(500);
+
+				pCard->Flip(false);
+				mpSelectedCard->Flip(false);
+				mpSelectedCard = nullptr;
+			}
+		}
+	}
+
 }
 
 void solitaire::Game::CreateCradDack()
@@ -59,5 +99,56 @@ void solitaire::Game::CreateCradDack()
 	//총 40장
 	//골고루 섞어서
 
+	std::vector<Card::Type> types;
 
+	while (types.size() < (size_t)BOARD_COLUWN * BOARD_ROW)
+	{
+		int mod = types.size() % 6;
+		switch (mod)
+		{
+		case 0:
+			types.push_back(Card::Type::Bear);
+			types.push_back(Card::Type::Bear);
+			break;
+		case 2:
+			types.push_back(Card::Type::Wolf);
+			types.push_back(Card::Type::Wolf);
+			break;
+		case 4:
+			types.push_back(Card::Type::Dragon);
+			types.push_back(Card::Type::Dragon);
+			break;
+		}
+
+	}
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
+	std::shuffle(types.begin(), types.end(), gen);
+
+	int index{};
+	int posX{ 15 }, posY{10};
+
+	for (int x = 0; x < BOARD_COLUWN; ++x)
+	{
+		posY = 10;
+		for (int y = 0; y < BOARD_ROW; ++y)
+		{
+			mDeck.push_back(Card(mHwnd, index, types[index++], posX, posY));
+			posY += 150;
+		}
+		posX += 110;
+	}
 }
+
+
+//c++ 스타일
+// std::random_device rd;
+// std::mt19937 gen(rd());	//Function Object - Functor 함수오버로딩
+// gen() % x(범위) <-사용
+//
+// std::uniform_int_distribution<> dist(0,9);  //고르게 만들기 / 정규분포
+// dist(gen) 
+//
+// std::shuffle(deck.begin(), deck.end(), gen);
+//

@@ -23,14 +23,19 @@ namespace solitaire
 		int mY;
 		Type mType;
 		bool mIsFront;
+		int mIndex;
 		
 		Card();
 	public:
-		Card(HWND hwnd,Type type, int x, int y);
+		Card(HWND hwnd,int index, Type type, int x, int y);
 
 		void Draw(Gdiplus::Graphics& graphics);
 		void Flip(bool isFront);
 		bool CheckClicked(int x, int y);
 		void Invalidate();
+
+		Type GetType() { return mType; }
+		int GetIndex() { return mIndex; }
+
 	};
 }
